@@ -25,16 +25,14 @@ namespace GameSolver { namespace Connect4 {
 
   /** 
    * A class storing a Connect 4 position.
-   * All function are relative to the current player to play.
-   *
-   * Position containing aligment are not supported by this class 
-   * as it simplifies implementation and there is no point solving an already won position
+   * Functions are relative to the current player to play.
+   * Position containing aligment are not supported by this class.
    */
   class Position {
     public:
 
-      static const int WIDTH = 7;  // Height of the board
-      static const int HEIGHT = 6; // Width of the board
+      static const int WIDTH = 7;  // width of the board
+      static const int HEIGHT = 6; // height of the board
       static_assert(WIDTH < 10, "Board's width must be less than 10");
 
       /**
