@@ -35,9 +35,9 @@ namespace GameSolver { namespace Connect4 {
      * @param: alpha < beta, a score window within which we are evaluating the position.
      *
      * @return the exact score, an upper or lower bound score depending of the case:
-     * - if true score of position <= alpha then true score <= return value <= alpha
-     * - if true score of position >= beta then beta <= return value <= true score
-     * - if alpha <= true score <= beta then return value = true score
+     * - if actual score of position <= alpha then actual score <= return value <= alpha
+     * - if actual score of position >= beta then beta <= return value <= actual score
+     * - if alpha <= actual score <= beta then return value = actual score
      */
     int negamax(const Position &P, int alpha, int beta) {
       assert(alpha < beta);
@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
     Position P;
     if(P.play(line) != line.size())
     {
-      std::cerr << "Line << " << l << ": Invalid move " << (P.nbMoves()+1) << " \"" << line << "\"" << std::endl;
+      std::cerr << "Line " << l << ": Invalid move " << (P.nbMoves()+1) << " \"" << line << "\"" << std::endl;
     }
     else
     {
