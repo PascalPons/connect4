@@ -30,6 +30,8 @@ namespace GameSolver { namespace Connect4 {
     private:
     unsigned long long nodeCount; // counter of explored nodes.
 
+    int columnOrder[Position::WIDTH]; // column exploration order
+    
     /**
      * Reccursively score connect 4 position using negamax variant of alpha-beta algorithm.
      * @param: alpha < beta, a score window within which we are evaluating the position.
@@ -57,9 +59,9 @@ namespace GameSolver { namespace Connect4 {
       }
 
       for(int x = 0; x < Position::WIDTH; x++) // compute the score of all possible next move and keep the best one
-        if(P.canPlay(x)) {
+        if(P.canPlay(columnOrder[x])) {
           Position P2(P);
-          P2.play(x);               // It's opponent turn in P2 position after current player plays x column.
+          P2.play(columnOrder[x]);               // It's opponent turn in P2 position after current player plays x column.
           int score = -negamax(P2, -beta, -alpha); // explore opponent's score within [-beta;-alpha] windows:
                                               // no need to have good precision for score better than beta (opponent's score worse than -beta)
                                               // no need to check for score worse than alpha (opponent's score worse better than -alpha)
@@ -86,6 +88,12 @@ namespace GameSolver { namespace Connect4 {
     unsigned long long getNodeCount() 
     {
       return nodeCount;
+    }
+
+    // Constructor
+    Solver() : nodeCount(0) {
+      for(int i = 0; i < Position::WIDTH; i++)
+        columnOrder[i] = Position::WIDTH/2 + (1-2*(i%2))*(i+1)/2; // initialize the column exploration order, starting with center columns
     }
 
   };
