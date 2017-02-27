@@ -91,9 +91,11 @@ namespace GameSolver { namespace Connect4 {
     }
 
     // Constructor
-    Solver() : nodeCount(0) {
+    Solver() : nodeCount{0} {
       for(int i = 0; i < Position::WIDTH; i++)
-        columnOrder[i] = Position::WIDTH/2 + (1-2*(i%2))*(i+1)/2; // initialize the column exploration order, starting with center columns
+        columnOrder[i] = Position::WIDTH/2 + (1-2*(i%2))*(i+1)/2; 
+        // initialize the column exploration order, starting with center columns
+        // example for WIDTH=7: columnOrder = {3, 4, 2, 5, 1, 6, 0}
     }
 
   };
