@@ -20,20 +20,65 @@
 #define POSITION_HPP
 
 #include <string>
+#include <cstdint>
 
 namespace GameSolver { namespace Connect4 {
-
   /** 
    * A class storing a Connect 4 position.
    * Functions are relative to the current player to play.
    * Position containing aligment are not supported by this class.
-   */
+   *
+   * A binary bitboard representationis used.
+   * Each column is encoded on HEIGH+1 bits.
+	 * 
+   * Example of bit order to encode for a 7x6 board
+	 * .  .  .  .  .  .  .
+	 * 5 12 19 26 33 40 47
+	 * 4 11 18 25 32 39 46
+	 * 3 10 17 24 31 38 45
+	 * 2  9 16 23 30 37 44
+	 * 1  8 15 22 29 36 43
+	 * 0  7 14 21 28 35 42 
+	 * 
+   * Position is stored as
+   * - a bitboard "mask" with 1 on any color stones
+   * - a bitboard "current_player" with 1 on stones of current player
+   *
+   * "current_player" bitboard can be transformed into a compact and non ambiguous key
+   * by adding an extra bit on top of the last non empty cell of each column.
+   * This allow to identify all the empty cells whithout needing "mask" bitboard
+   *
+	 * current_player "x" = 1, opponent "o" = 0
+	 * board     position  mask      key       bottom
+	 *           0000000   0000000   0000000   0000000
+	 * .......   0000000   0000000   0001000   0000000
+	 * ...o...   0000000   0001000   0010000   0000000
+	 * ..xx...   0011000   0011000   0011000   0000000
+	 * ..ox...   0001000   0011000   0001100   0000000
+	 * ..oox..   0000100   0011100   0000110   0000000
+	 * ..oxxo.   0001100   0011110   1101101   1111111
+	 *
+	 * current_player "o" = 1, opponent "x" = 0
+	 * board     position  mask      key       bottom
+	 *           0000000   0000000   0001000   0000000
+	 * ...x...   0000000   0001000   0000000   0000000
+	 * ...o...   0001000   0001000   0011000   0000000
+	 * ..xx...   0000000   0011000   0000000   0000000
+	 * ..ox...   0010000   0011000   0010100   0000000
+	 * ..oox..   0011000   0011100   0011010   0000000
+	 * ..oxxo.   0010010   0011110   1110011   1111111
+	 *
+	 * key is an unique representation of a board key = position + mask + bottom
+	 * in practice, as bottom is constant, key = position + mask is also a 
+   * non-ambigous representation of the position.
+	 */
   class Position {
     public:
 
       static const int WIDTH = 7;  // width of the board
       static const int HEIGHT = 6; // height of the board
       static_assert(WIDTH < 10, "Board's width must be less than 10");
+      static_assert(WIDTH*(HEIGHT+1) <= 64, "Board does not fit in 64bits bitboard");
 
       /**
        * Indicates whether a column is playable.
@@ -42,7 +87,7 @@ namespace GameSolver { namespace Connect4 {
        */
       bool canPlay(int col) const 
       {
-        return height[col] < HEIGHT;
+        return (mask & top_mask(col)) == 0;
       }
 
       /**
@@ -53,8 +98,8 @@ namespace GameSolver { namespace Connect4 {
        */
       void play(int col) 
       {
-        board[col][height[col]] = 1 + moves%2;
-        height[col]++;
+        current_position ^= mask;
+        mask |= mask + bottom_mask(col);
         moves++;
       }
 
@@ -87,25 +132,9 @@ namespace GameSolver { namespace Connect4 {
        */
       bool isWinningMove(int col) const 
       {
-        int current_player = 1 + moves%2;
-        // check for vertical alignments
-        if(height[col] >= 3 
-            && board[col][height[col]-1] == current_player 
-            && board[col][height[col]-2] == current_player 
-            && board[col][height[col]-3] == current_player) 
-          return true;
-
-        for(int dy = -1; dy <=1; dy++) {    // Iterate on horizontal (dy = 0) or two diagonal directions (dy = -1 or dy = 1).
-          int nb = 0;                       // counter of the number of stones of current player surronding the played stone in tested direction.
-          for(int dx = -1; dx <=1; dx += 2) // count continuous stones of current player on the left, then right of the played column.
-            for(int x = col+dx, y = height[col]+dx*dy; x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT && board[x][y] == current_player; nb++) {
-              x += dx;
-              y += dx*dy;
-            }
-          if(nb >= 3) return true; // there is an aligment if at least 3 other stones of the current user 
-                                   // are surronding the played stone in the tested direction.
-        }
-        return false;
+        uint64_t pos = current_position; 
+        pos |= (mask + bottom_mask(col)) & column_mask(col);
+        return alignment(pos);
       }
 
       /**    
@@ -116,19 +145,68 @@ namespace GameSolver { namespace Connect4 {
         return moves;
       }
 
-      /*
+      /**    
+       * @return a compact representation of a position on WIDTH*(HEIGHT+1) bits.
+       */
+      uint64_t key() const 
+      {
+        return current_position + mask;
+      }
+
+      /**
        * Default constructor, build an empty position.
        */
-      Position() : board{0}, height{0}, moves{0} {}
+      Position() : current_position{0}, mask{0}, moves{0} {}
 
 
 
     private:
-      int board[WIDTH][HEIGHT]; // 0 if cell is empty, 1 for first player and 2 for second player.
-      int height[WIDTH];        // number of stones per column
-      unsigned int moves;       // number of moves played since the beinning of the game.
+      uint64_t current_position;
+      uint64_t mask;
+      unsigned int moves; // number of moves played since the beinning of the game.
+
+      /**
+       * Test an alignment for current player (identified by one in the bitboard pos)
+       * @param a bitboard position of a player's cells.
+       * @return true if the player has a 4-alignment.
+       */
+      static bool alignment(uint64_t pos) {
+        // horizontal 
+        uint64_t m = pos & (pos >> (HEIGHT+1));
+        if(m & (m >> (2*(HEIGHT+1)))) return true;
+
+        // diagonal 1
+        m = pos & (pos >> HEIGHT);
+        if(m & (m >> (2*HEIGHT))) return true;
+
+        // diagonal 2 
+        m = pos & (pos >> (HEIGHT+2));
+        if(m & (m >> (2*(HEIGHT+2)))) return true;
+
+        // vertical;
+        m = pos & (pos >> 1);
+        if(m & (m >> 2)) return true;
+
+        return false;
+      }
+
+      // return a bitmask containg a single 1 corresponding to the top cel of a given column
+      static uint64_t top_mask(int col) {
+        return (UINT64_C(1) << (HEIGHT - 1)) << col*(HEIGHT+1);
+      }
+
+      // return a bitmask containg a single 1 corresponding to the bottom cell of a given column
+      static uint64_t bottom_mask(int col) {
+        return UINT64_C(1) << col*(HEIGHT+1);
+      }
+
+      // return a bitmask 1 on all the cells of a given column
+      static uint64_t column_mask(int col) {
+        return ((UINT64_C(1) << HEIGHT)-1) << col*(HEIGHT+1);
+      }
+
   };
-  
+
 }} // end namespaces
 
 #endif
