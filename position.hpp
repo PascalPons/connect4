@@ -77,6 +77,10 @@ namespace GameSolver { namespace Connect4 {
 
       static const int WIDTH = 7;  // width of the board
       static const int HEIGHT = 6; // height of the board
+      static const int MIN_SCORE = -(WIDTH*HEIGHT)/2 + 3;
+      static const int MAX_SCORE = (WIDTH*HEIGHT+1)/2 - 3;
+
+
       static_assert(WIDTH < 10, "Board's width must be less than 10");
       static_assert(WIDTH*(HEIGHT+1) <= 64, "Board does not fit in 64bits bitboard");
 

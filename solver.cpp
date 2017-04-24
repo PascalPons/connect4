@@ -18,6 +18,7 @@
 
 #include <cassert>
 #include "position.hpp"
+#include "TranspositionTable.hpp"
 
 using namespace GameSolver::Connect4;
 
@@ -31,6 +32,8 @@ namespace GameSolver { namespace Connect4 {
     unsigned long long nodeCount; // counter of explored nodes.
 
     int columnOrder[Position::WIDTH]; // column exploration order
+
+    TranspositionTable transTable;
     
     /**
      * Reccursively score connect 4 position using negamax variant of alpha-beta algorithm.
@@ -53,6 +56,9 @@ namespace GameSolver { namespace Connect4 {
           return (Position::WIDTH*Position::HEIGHT+1 - P.nbMoves())/2;
 
       int max = (Position::WIDTH*Position::HEIGHT-1 - P.nbMoves())/2;	// upper bound of our score as we cannot win immediately
+      if(int val = transTable.get(P.key()))
+        max = val + Position::MIN_SCORE - 1;
+
       if(beta > max) {
         beta = max;                     // there is no need to keep beta above our max possible score.
         if(alpha >= beta) return beta;  // prune the exploration if the [alpha;beta] window is empty.
@@ -71,6 +77,7 @@ namespace GameSolver { namespace Connect4 {
                                            // need to search for a position that is better than the best so far.
         }
 
+      transTable.put(P.key(), alpha - Position::MIN_SCORE + 1); // save the upper bound of the position
       return alpha;
     }
 
@@ -78,7 +85,6 @@ namespace GameSolver { namespace Connect4 {
 
     int solve(const Position &P, bool weak = false) 
     {
-      nodeCount = 0;
       if(weak) 
         return negamax(P, -1, 1);
       else 
@@ -90,10 +96,17 @@ namespace GameSolver { namespace Connect4 {
       return nodeCount;
     }
 
+    void reset() 
+    {
+      nodeCount = 0;
+      transTable.reset();
+    }
+
     // Constructor
-    Solver() : nodeCount{0} {
+    Solver() : nodeCount{0}, transTable(8388593) { //8388593 prime = 64MB of transposition table
+      reset();
       for(int i = 0; i < Position::WIDTH; i++)
-        columnOrder[i] = Position::WIDTH/2 + (1-2*(i%2))*(i+1)/2; 
+        columnOrder[i] = Position::WIDTH/2 + (1-2*(i%2))*(i+1)/2;   
         // initialize the column exploration order, starting with center columns
         // example for WIDTH=7: columnOrder = {3, 4, 2, 5, 1, 6, 0}
     }
@@ -144,6 +157,7 @@ int main(int argc, char** argv) {
     }
     else
     {
+      solver.reset();
       unsigned long long start_time = getTimeMicrosec();
       int score = solver.solve(P, weak);
       unsigned long long end_time = getTimeMicrosec();
