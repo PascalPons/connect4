@@ -144,7 +144,7 @@ namespace GameSolver { namespace Connect4 {
       /**    
        * @return number of moves played from the beginning of the game.
        */
-      unsigned int nbMoves() const
+      int nbMoves() const
       {
         return moves;
       }

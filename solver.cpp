@@ -85,10 +85,22 @@ namespace GameSolver { namespace Connect4 {
 
     int solve(const Position &P, bool weak = false) 
     {
-      if(weak) 
-        return negamax(P, -1, 1);
-      else 
-        return negamax(P, -Position::WIDTH*Position::HEIGHT/2, Position::WIDTH*Position::HEIGHT/2);
+      int min = -(Position::WIDTH*Position::HEIGHT - P.nbMoves())/2;
+      int max = (Position::WIDTH*Position::HEIGHT+1 - P.nbMoves())/2;
+      if(weak) {
+        min = -1;
+        max = 1;
+      }
+
+      while(min < max) {                    // iteratively narrow the min-max exploration window
+        int med = min + (max - min)/2;
+        if(med <= 0 && min/2 < med) med = min/2;
+        else if(med >= 0 && max/2 > med) med = max/2;
+        int r = negamax(P, med, med + 1);   // use a null depth window to know if the actual score is greater or smaller than med
+        if(r <= med) max = r;
+        else min = r;
+      }
+      return min;
     }
 
     unsigned long long getNodeCount() 
