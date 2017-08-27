@@ -23,14 +23,14 @@
 #include <cstdint>
 
 namespace GameSolver { namespace Connect4 {
-  /** 
+  /**
    * A class storing a Connect 4 position.
    * Functions are relative to the current player to play.
-   * Position containing aligment are not supported by this class.
+   * Position containing alignment are not supported by this class.
    *
    * A binary bitboard representationis used.
    * Each column is encoded on HEIGH+1 bits.
-   * 
+   *
    * Example of bit order to encode for a 7x6 board
    * .  .  .  .  .  .  .
    * 5 12 19 26 33 40 47
@@ -38,8 +38,8 @@ namespace GameSolver { namespace Connect4 {
    * 3 10 17 24 31 38 45
    * 2  9 16 23 30 37 44
    * 1  8 15 22 29 36 43
-   * 0  7 14 21 28 35 42 
-   * 
+   * 0  7 14 21 28 35 42
+   *
    * Position is stored as
    * - a bitboard "mask" with 1 on any color stones
    * - a bitboard "current_player" with 1 on stones of current player
@@ -69,9 +69,20 @@ namespace GameSolver { namespace Connect4 {
    * ..oxxo.   0010010   0011110   1110011   1111111
    *
    * key is an unique representation of a board key = position + mask + bottom
-   * in practice, as bottom is constant, key = position + mask is also a 
+   * in practice, as bottom is constant, key = position + mask is also a
    * non-ambigous representation of the position.
    */
+
+
+  /*
+   * Generate a bitmask containing one for the bottom slot of each colum
+   * must be defined outside of the class definition to be available at compile time for bottom_mask
+   */
+  constexpr static uint64_t bottom(int width, int height) {
+    return width == 0 ? 0 : bottom(width-1, height) | 1LL << (width-1)*(height+1);
+  }
+
+
   class Position {
     public:
 
@@ -80,19 +91,8 @@ namespace GameSolver { namespace Connect4 {
       static const int MIN_SCORE = -(WIDTH*HEIGHT)/2 + 3;
       static const int MAX_SCORE = (WIDTH*HEIGHT+1)/2 - 3;
 
-
       static_assert(WIDTH < 10, "Board's width must be less than 10");
       static_assert(WIDTH*(HEIGHT+1) <= 64, "Board does not fit in 64bits bitboard");
-
-      /**
-       * Indicates whether a column is playable.
-       * @param col: 0-based index of column to play
-       * @return true if the column is playable, false if the column is already full.
-       */
-      bool canPlay(int col) const 
-      {
-        return (mask & top_mask(col)) == 0;
-      }
 
       /**
        * Plays a playable column.
@@ -100,10 +100,10 @@ namespace GameSolver { namespace Connect4 {
        *
        * @param col: 0-based index of a playable column.
        */
-      void play(int col) 
+      void play(int col)
       {
         current_position ^= mask;
-        mask |= mask + bottom_mask(col);
+        mask |= mask + bottom_mask_col(col);
         moves++;
       }
 
@@ -114,34 +114,30 @@ namespace GameSolver { namespace Connect4 {
        * @return number of played moves. Processing will stop at first invalid move that can be:
        *           - invalid character (non digit, or digit >= WIDTH)
        *           - playing a colum the is already full
-       *           - playing a column that makes an aligment (we only solve non).
-       *         Caller can check if the move sequence was valid by comparing the number of 
+       *           - playing a column that makes an alignment (we only solve non).
+       *         Caller can check if the move sequence was valid by comparing the number of
        *         processed moves to the length of the sequence.
        */
-      unsigned int play(std::string seq) 
+      unsigned int play(std::string seq)
       {
         for(unsigned int i = 0; i < seq.size(); i++) {
-          int col = seq[i] - '1'; 
+          int col = seq[i] - '1';
           if(col < 0 || col >= Position::WIDTH || !canPlay(col) || isWinningMove(col)) return i; // invalid move
           play(col);
         }
         return seq.size();
       }
 
-      /**
-       * Indicates whether the current player wins by playing a given column.
-       * This function should never be called on a non-playable column.
-       * @param col: 0-based index of a playable column.
-       * @return true if current player makes an alignment by playing the corresponding column col.
+      /*
+       * return true if current player can win next move
        */
-      bool isWinningMove(int col) const 
+      bool canWinNext() const
       {
-        uint64_t pos = current_position; 
-        pos |= (mask + bottom_mask(col)) & column_mask(col);
-        return alignment(pos);
+        return winning_position() & possible();
       }
 
-      /**    
+
+      /**
        * @return number of moves played from the beginning of the game.
        */
       int nbMoves() const
@@ -149,12 +145,33 @@ namespace GameSolver { namespace Connect4 {
         return moves;
       }
 
-      /**    
+      /**
        * @return a compact representation of a position on WIDTH*(HEIGHT+1) bits.
        */
-      uint64_t key() const 
+      uint64_t key() const
       {
         return current_position + mask;
+      }
+
+      /*
+       * Return a bitmap of all the possible next moves the do not lose in one turn.
+       * A losing move is a move leaving the possibility for the opponent to win directly.
+       *
+       * Warning this function is intended to test position where you cannot win in one turn
+       * If you have a winning move, this function can miss it and prefer to prevent the opponent
+       * to make an alignment.
+       */
+      uint64_t possibleNonLoosingMoves() const {
+        assert(!canWinNext());
+        uint64_t possible_mask = possible();
+        uint64_t opponent_win = opponent_winning_position();
+        uint64_t forced_moves = possible_mask & opponent_win;
+        if(forced_moves) {
+          if(forced_moves & (forced_moves - 1)) // check if there is more than one forced move
+            return 0;                           // the opponnent has two winning moves and you cannot stop him
+          else possible_mask = forced_moves;    // enforce to play the single forced move
+        }
+        return possible_mask & ~(opponent_win >> 1);  // avoid to play below an opponent winning spot
       }
 
       /**
@@ -168,45 +185,95 @@ namespace GameSolver { namespace Connect4 {
       unsigned int moves; // number of moves played since the beinning of the game.
 
       /**
-       * Test an alignment for current player (identified by one in the bitboard pos)
-       * @param a bitboard position of a player's cells.
-       * @return true if the player has a 4-alignment.
+       * Indicates whether a column is playable.
+       * @param col: 0-based index of column to play
+       * @return true if the column is playable, false if the column is already full.
        */
-      static bool alignment(uint64_t pos) {
-        // horizontal 
-        uint64_t m = pos & (pos >> (HEIGHT+1));
-        if(m & (m >> (2*(HEIGHT+1)))) return true;
-
-        // diagonal 1
-        m = pos & (pos >> HEIGHT);
-        if(m & (m >> (2*HEIGHT))) return true;
-
-        // diagonal 2 
-        m = pos & (pos >> (HEIGHT+2));
-        if(m & (m >> (2*(HEIGHT+2)))) return true;
-
-        // vertical;
-        m = pos & (pos >> 1);
-        if(m & (m >> 2)) return true;
-
-        return false;
+      bool canPlay(int col) const
+      {
+        return (mask & top_mask_col(col)) == 0;
       }
 
+      /**
+       * Indicates whether the current player wins by playing a given column.
+       * This function should never be called on a non-playable column.
+       * @param col: 0-based index of a playable column.
+       * @return true if current player makes an alignment by playing the corresponding column col.
+       */
+      bool isWinningMove(int col) const
+      {
+        return winning_position() & possible() & column_mask(col);
+      }
+
+      /*
+       * Return a bitmask of the possible winning positions for the current player
+       */
+      uint64_t winning_position() const {
+        return compute_winning_position(current_position, mask);
+      }
+
+      /*
+       * Return a bitmask of the possible winning positions for the opponent
+       */
+      uint64_t opponent_winning_position() const {
+        return compute_winning_position(current_position ^ mask, mask);
+      }
+
+      uint64_t possible() const {
+        return (mask + bottom_mask) & board_mask;
+      }
+
+      static uint64_t compute_winning_position(uint64_t position, uint64_t mask) {
+        // vertical;
+        uint64_t r = (position << 1) & (position << 2) & (position << 3);
+
+        //horizontal
+        uint64_t p = (position << (HEIGHT+1)) & (position << 2*(HEIGHT+1));
+        r |= p & (position << 3*(HEIGHT+1));
+        r |= p & (position >> (HEIGHT+1));
+        p >>= 3*(HEIGHT+1);
+        r |= p & (position << (HEIGHT+1));
+        r |= p & (position >> 3*(HEIGHT+1));
+
+        //diagonal 1
+        p = (position << HEIGHT) & (position << 2*HEIGHT);
+        r |= p & (position << 3*HEIGHT);
+        r |= p & (position >> HEIGHT);
+        p >>= 3*HEIGHT;
+        r |= p & (position << HEIGHT);
+        r |= p & (position >> 3*HEIGHT);
+
+        //diagonal 2
+        p = (position << (HEIGHT+2)) & (position << 2*(HEIGHT+2));
+        r |= p & (position << 3*(HEIGHT+2));
+        r |= p & (position >> (HEIGHT+2));
+        p >>= 3*(HEIGHT+2);
+        r |= p & (position << (HEIGHT+2));
+        r |= p & (position >> 3*(HEIGHT+2));
+
+        return r & (board_mask ^ mask);
+      }
+
+      // Static bitmaps
+
+      const static uint64_t bottom_mask = bottom(WIDTH, HEIGHT);
+      const static uint64_t board_mask = bottom_mask * ((1LL << HEIGHT)-1);
+
       // return a bitmask containg a single 1 corresponding to the top cel of a given column
-      static uint64_t top_mask(int col) {
-        return (UINT64_C(1) << (HEIGHT - 1)) << col*(HEIGHT+1);
+      static constexpr uint64_t top_mask_col(int col) {
+        return UINT64_C(1) << ((HEIGHT - 1) + col*(HEIGHT+1));
       }
 
       // return a bitmask containg a single 1 corresponding to the bottom cell of a given column
-      static uint64_t bottom_mask(int col) {
+      static constexpr uint64_t bottom_mask_col(int col) {
         return UINT64_C(1) << col*(HEIGHT+1);
       }
 
+    public:
       // return a bitmask 1 on all the cells of a given column
-      static uint64_t column_mask(int col) {
+      static constexpr uint64_t column_mask(int col) {
         return ((UINT64_C(1) << HEIGHT)-1) << col*(HEIGHT+1);
       }
-
   };
 
 }} // end namespaces

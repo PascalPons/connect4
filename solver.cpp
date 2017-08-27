@@ -37,6 +37,8 @@ namespace GameSolver { namespace Connect4 {
 
     /**
      * Reccursively score connect 4 position using negamax variant of alpha-beta algorithm.
+     * @param: position to evaluate, this function assumes nobody already won and 
+     *         current player cannot win next move. This has to be checked before
      * @param: alpha < beta, a score window within which we are evaluating the position.
      *
      * @return the exact score, an upper or lower bound score depending of the case:
@@ -46,14 +48,22 @@ namespace GameSolver { namespace Connect4 {
      */
     int negamax(const Position &P, int alpha, int beta) {
       assert(alpha < beta);
+      assert(!P.canWinNext());
+
       nodeCount++; // increment counter of explored nodes
 
-      if(P.nbMoves() == Position::WIDTH*Position::HEIGHT) // check for draw game
+      uint64_t next = P.possibleNonLoosingMoves();
+      if(next == 0)     // if no possible non losing move, opponent wins next move
+        return -(Position::WIDTH*Position::HEIGHT - P.nbMoves())/2;
+
+      if(P.nbMoves() >= Position::WIDTH*Position::HEIGHT - 2) // check for draw game
         return 0; 
 
-      for(int x = 0; x < Position::WIDTH; x++) // check if current player can win next move
-        if(P.canPlay(x) && P.isWinningMove(x)) 
-          return (Position::WIDTH*Position::HEIGHT+1 - P.nbMoves())/2;
+      int min = -(Position::WIDTH*Position::HEIGHT-2 - P.nbMoves())/2;	// lower bound of score as opponent cannot win next move
+      if(alpha < min) {
+        alpha = min;                     // there is no need to keep beta above our max possible score.
+        if(alpha >= beta) return alpha;  // prune the exploration if the [alpha;beta] window is empty.
+      }
 
       int max = (Position::WIDTH*Position::HEIGHT-1 - P.nbMoves())/2;	// upper bound of our score as we cannot win immediately
       if(int val = transTable.get(P.key()))
@@ -65,7 +75,7 @@ namespace GameSolver { namespace Connect4 {
       }
 
       for(int x = 0; x < Position::WIDTH; x++) // compute the score of all possible next move and keep the best one
-        if(P.canPlay(columnOrder[x])) {
+        if(next & Position::column_mask(columnOrder[x])) {
           Position P2(P);
           P2.play(columnOrder[x]);               // It's opponent turn in P2 position after current player plays x column.
           int score = -negamax(P2, -beta, -alpha); // explore opponent's score within [-beta;-alpha] windows:
@@ -85,6 +95,8 @@ namespace GameSolver { namespace Connect4 {
 
     int solve(const Position &P, bool weak = false) 
     {
+      if(P.canWinNext()) // check if win in one move as the Negamax function does not support this case.
+        return (Position::WIDTH*Position::HEIGHT+1 - P.nbMoves())/2;
       int min = -(Position::WIDTH*Position::HEIGHT - P.nbMoves())/2;
       int max = (Position::WIDTH*Position::HEIGHT+1 - P.nbMoves())/2;
       if(weak) {
