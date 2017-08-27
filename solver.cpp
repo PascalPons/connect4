@@ -28,13 +28,13 @@ namespace GameSolver { namespace Connect4 {
    * A class to solve Connect 4 position using Nagemax variant of min-max algorithm.
    */
   class Solver {
-    private:
+  private:
     unsigned long long nodeCount; // counter of explored nodes.
 
     int columnOrder[Position::WIDTH]; // column exploration order
 
     TranspositionTable transTable;
-    
+
     /**
      * Reccursively score connect 4 position using negamax variant of alpha-beta algorithm.
      * @param: alpha < beta, a score window within which we are evaluating the position.
@@ -69,19 +69,19 @@ namespace GameSolver { namespace Connect4 {
           Position P2(P);
           P2.play(columnOrder[x]);               // It's opponent turn in P2 position after current player plays x column.
           int score = -negamax(P2, -beta, -alpha); // explore opponent's score within [-beta;-alpha] windows:
-                                              // no need to have good precision for score better than beta (opponent's score worse than -beta)
-                                              // no need to check for score worse than alpha (opponent's score worse better than -alpha)
+          // no need to have good precision for score better than beta (opponent's score worse than -beta)
+          // no need to check for score worse than alpha (opponent's score worse better than -alpha)
 
           if(score >= beta) return score;  // prune the exploration if we find a possible move better than what we were looking for.
           if(score > alpha) alpha = score; // reduce the [alpha;beta] window for next exploration, as we only 
-                                           // need to search for a position that is better than the best so far.
+          // need to search for a position that is better than the best so far.
         }
 
       transTable.put(P.key(), alpha - Position::MIN_SCORE + 1); // save the upper bound of the position
       return alpha;
     }
 
-    public:
+  public:
 
     int solve(const Position &P, bool weak = false) 
     {
@@ -119,13 +119,11 @@ namespace GameSolver { namespace Connect4 {
       reset();
       for(int i = 0; i < Position::WIDTH; i++)
         columnOrder[i] = Position::WIDTH/2 + (1-2*(i%2))*(i+1)/2;   
-        // initialize the column exploration order, starting with center columns
-        // example for WIDTH=7: columnOrder = {3, 4, 2, 5, 1, 6, 0}
+      // initialize the column exploration order, starting with center columns
+      // example for WIDTH=7: columnOrder = {3, 4, 2, 5, 1, 6, 0}
     }
 
   };
-
-
 }} // namespace GameSolver::Connect4
 
 
@@ -160,7 +158,7 @@ int main(int argc, char** argv) {
   if(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'w') weak = true;
 
   std::string line;
-  
+
   for(int l = 1; std::getline(std::cin, line); l++) {
     Position P;
     if(P.play(line) != line.size())
