@@ -94,16 +94,18 @@ namespace GameSolver { namespace Connect4 {
       static_assert(WIDTH < 10, "Board's width must be less than 10");
       static_assert(WIDTH*(HEIGHT+1) <= 64, "Board does not fit in 64bits bitboard");
 
+
       /**
-       * Plays a playable column.
-       * This function should not be called on a non-playable column or a column making an alignment.
+       * Plays a possible move given by its bitmap representation
        *
-       * @param col: 0-based index of a playable column.
+       * @param move: a possible move given by its bitmap representation
+       *        only one bit of the bitmap should be set to 1
+       *        the move should be a valid possible move for the current player
        */
-      void play(int col)
+      void play(uint64_t move)
       {
         current_position ^= mask;
-        mask |= mask + bottom_mask_col(col);
+        mask |= move;
         moves++;
       }
 
@@ -123,7 +125,7 @@ namespace GameSolver { namespace Connect4 {
         for(unsigned int i = 0; i < seq.size(); i++) {
           int col = seq[i] - '1';
           if(col < 0 || col >= Position::WIDTH || !canPlay(col) || isWinningMove(col)) return i; // invalid move
-          play(col);
+          playCol(col);
         }
         return seq.size();
       }
@@ -161,7 +163,7 @@ namespace GameSolver { namespace Connect4 {
        * If you have a winning move, this function can miss it and prefer to prevent the opponent
        * to make an alignment.
        */
-      uint64_t possibleNonLoosingMoves() const {
+      uint64_t possibleNonLosingMoves() const {
         assert(!canWinNext());
         uint64_t possible_mask = possible();
         uint64_t opponent_win = opponent_winning_position();
@@ -175,14 +177,26 @@ namespace GameSolver { namespace Connect4 {
       }
 
       /**
+       * Score a possible move.
+       *
+       * @param move, a possible move given in a bitmap format.
+       *
+       * The score we are using is the number of winning spots
+       * the current player has after playing the move.
+       */
+      int moveScore(uint64_t move) const {
+        return popcount(compute_winning_position(current_position | move, mask));
+      }
+
+      /**
        * Default constructor, build an empty position.
        */
       Position() : current_position{0}, mask{0}, moves{0} {}
 
     private:
-      uint64_t current_position;
-      uint64_t mask;
-      unsigned int moves; // number of moves played since the beinning of the game.
+      uint64_t current_position; // bitmap of the current_player stones
+      uint64_t mask;             // bitmap of all the already palyed spots
+      unsigned int moves;        // number of moves played since the beinning of the game.
 
       /**
        * Indicates whether a column is playable.
@@ -193,6 +207,19 @@ namespace GameSolver { namespace Connect4 {
       {
         return (mask & top_mask_col(col)) == 0;
       }
+
+
+      /**
+       * Plays a playable column.
+       * This function should not be called on a non-playable column or a column making an alignment.
+       *
+       * @param col: 0-based index of a playable column.
+       */
+      void playCol(int col)
+      {
+        play((mask + bottom_mask_col(col)) & column_mask(col));
+      }
+
 
       /**
        * Indicates whether the current player wins by playing a given column.
@@ -219,10 +246,29 @@ namespace GameSolver { namespace Connect4 {
         return compute_winning_position(current_position ^ mask, mask);
       }
 
+      /*
+       * Bitmap of the next possible valid moves for the current player
+       * Including losing moves.
+       */
       uint64_t possible() const {
         return (mask + bottom_mask) & board_mask;
       }
 
+      /*
+       * counts number of bit set to one in a 64bits integer
+       */
+      static unsigned int popcount(uint64_t m) {
+        unsigned int c = 0; 
+        for (c = 0; m; c++) m &= m - 1;
+        return c;
+      }
+
+      /*
+       * @parmam position, a bitmap of the player to evaluate the winning pos
+       * @param mask, a mask of the already played spots
+       *
+       * @return a bitmap of all the winning free spots making an alignment
+       */
       static uint64_t compute_winning_position(uint64_t position, uint64_t mask) {
         // vertical;
         uint64_t r = (position << 1) & (position << 2) & (position << 3);

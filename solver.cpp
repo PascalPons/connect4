@@ -19,13 +19,14 @@
 #include <cassert>
 #include "position.hpp"
 #include "TranspositionTable.hpp"
+#include "MoveSorter.hpp"
 
 using namespace GameSolver::Connect4;
 
 namespace GameSolver { namespace Connect4 {
 
   /*
-   * A class to solve Connect 4 position using Nagemax variant of min-max algorithm.
+   * A class to solve Connect 4 position using Negamax variant of alpha-beta algorithm.
    */
   class Solver {
   private:
@@ -52,7 +53,7 @@ namespace GameSolver { namespace Connect4 {
 
       nodeCount++; // increment counter of explored nodes
 
-      uint64_t next = P.possibleNonLoosingMoves();
+      uint64_t next = P.possibleNonLosingMoves();
       if(next == 0)     // if no possible non losing move, opponent wins next move
         return -(Position::WIDTH*Position::HEIGHT - P.nbMoves())/2;
 
@@ -74,10 +75,16 @@ namespace GameSolver { namespace Connect4 {
         if(alpha >= beta) return beta;  // prune the exploration if the [alpha;beta] window is empty.
       }
 
-      for(int x = 0; x < Position::WIDTH; x++) // compute the score of all possible next move and keep the best one
-        if(next & Position::column_mask(columnOrder[x])) {
+
+      MoveSorter moves;
+
+      for(int i = Position::WIDTH; i--; )
+         if(uint64_t move = next & Position::column_mask(columnOrder[i]))
+           moves.add(move, P.moveScore(move));
+
+      while(uint64_t next = moves.getNext()) {
           Position P2(P);
-          P2.play(columnOrder[x]);               // It's opponent turn in P2 position after current player plays x column.
+          P2.play(next);  // It's opponent turn in P2 position after current player plays x column.
           int score = -negamax(P2, -beta, -alpha); // explore opponent's score within [-beta;-alpha] windows:
           // no need to have good precision for score better than beta (opponent's score worse than -beta)
           // no need to check for score worse than alpha (opponent's score worse better than -alpha)
