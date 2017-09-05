@@ -34,7 +34,7 @@ namespace GameSolver { namespace Connect4 {
 
     int columnOrder[Position::WIDTH]; // column exploration order
 
-    TranspositionTable transTable;
+    TranspositionTable<49,7,23> transTable;
 
     /**
      * Reccursively score connect 4 position using negamax variant of alpha-beta algorithm.
@@ -134,7 +134,7 @@ namespace GameSolver { namespace Connect4 {
     }
 
     // Constructor
-    Solver() : nodeCount{0}, transTable(8388593) { //8388593 prime = 64MB of transposition table
+    Solver() : nodeCount{0} {
       reset();
       for(int i = 0; i < Position::WIDTH; i++)
         columnOrder[i] = Position::WIDTH/2 + (1-2*(i%2))*(i+1)/2;   
