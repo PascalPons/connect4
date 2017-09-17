@@ -25,6 +25,13 @@ using namespace GameSolver::Connect4;
 
 namespace GameSolver { namespace Connect4 {
 
+
+  // log2(1) = 0; log2(2) = 1; log2(3) = 1; log2(4) = 2; log2(8) = 3
+  constexpr unsigned int log2(unsigned int n) 
+  {
+    return n <= 1 ? 0 : log2(n/2)+1;
+  }
+
   /*
    * A class to solve Connect 4 position using Negamax variant of alpha-beta algorithm.
    */
@@ -34,7 +41,9 @@ namespace GameSolver { namespace Connect4 {
 
     int columnOrder[Position::WIDTH]; // column exploration order
 
-    TranspositionTable<49,7,23> transTable;
+    TranspositionTable<Position::WIDTH*(Position::HEIGHT+1),
+                      log2(Position::MAX_SCORE - Position::MIN_SCORE + 1) + 1,
+                      23> transTable;
 
     /**
      * Reccursively score connect 4 position using negamax variant of alpha-beta algorithm.

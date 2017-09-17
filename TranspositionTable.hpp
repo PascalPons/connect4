@@ -111,8 +111,8 @@ class TranspositionTable {
    * @param value: must be less than value_size bits. null (0) value is used to encode missing data
    */
   void put(uint64_t key, value_t value) {
-    assert(key >> KEY_SIZE == 0);
-    assert(value >> VALUE_SIZE == 0);
+    assert(key >> key_size == 0);
+    assert(value >> value_size == 0);
     size_t pos = index(key);
     K[pos] = key;
     V[pos] = value;
@@ -124,7 +124,7 @@ class TranspositionTable {
    * @return value_size bits value associated with the key if present, 0 otherwise.
    */
   value_t get(uint64_t key) const {
-    assert(key >> KEY_SIZE == 0);
+    assert(key >> key_size == 0);
     size_t pos = index(key);
     if(K[pos] == (key_t)key) return V[pos];
     else return 0;
