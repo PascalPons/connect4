@@ -231,7 +231,7 @@ namespace GameSolver { namespace Connect4 {
         uint64_t p = (position << (HEIGHT+1)) & (position << 2*(HEIGHT+1));
         r |= p & (position << 3*(HEIGHT+1));
         r |= p & (position >> (HEIGHT+1));
-        p >>= 3*(HEIGHT+1);
+        p = (position >> (HEIGHT+1)) & (position >> 2*(HEIGHT+1));
         r |= p & (position << (HEIGHT+1));
         r |= p & (position >> 3*(HEIGHT+1));
 
@@ -239,7 +239,7 @@ namespace GameSolver { namespace Connect4 {
         p = (position << HEIGHT) & (position << 2*HEIGHT);
         r |= p & (position << 3*HEIGHT);
         r |= p & (position >> HEIGHT);
-        p >>= 3*HEIGHT;
+        p = (position >> HEIGHT) & (position >> 2*HEIGHT);
         r |= p & (position << HEIGHT);
         r |= p & (position >> 3*HEIGHT);
 
@@ -247,7 +247,7 @@ namespace GameSolver { namespace Connect4 {
         p = (position << (HEIGHT+2)) & (position << 2*(HEIGHT+2));
         r |= p & (position << 3*(HEIGHT+2));
         r |= p & (position >> (HEIGHT+2));
-        p >>= 3*(HEIGHT+2);
+        p = (position >> (HEIGHT+2)) & (position >> 2*(HEIGHT+2));
         r |= p & (position << (HEIGHT+2));
         r |= p & (position >> 3*(HEIGHT+2));
 
