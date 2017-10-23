@@ -17,33 +17,12 @@
  */
 
 #include <cassert>
-#include "position.hpp"
-#include "TranspositionTable.hpp"
+#include "solver.hpp"
 #include "MoveSorter.hpp"
 
 using namespace GameSolver::Connect4;
 
 namespace GameSolver { namespace Connect4 {
-
-
-  // log2(1) = 0; log2(2) = 1; log2(3) = 1; log2(4) = 2; log2(8) = 3
-  constexpr unsigned int log2(unsigned int n) 
-  {
-    return n <= 1 ? 0 : log2(n/2)+1;
-  }
-
-  /*
-   * A class to solve Connect 4 position using Negamax variant of alpha-beta algorithm.
-   */
-  class Solver {
-  private:
-    unsigned long long nodeCount; // counter of explored nodes.
-
-    int columnOrder[Position::WIDTH]; // column exploration order
-
-    TranspositionTable<Position::WIDTH*(Position::HEIGHT+1),
-                      log2(Position::MAX_SCORE - Position::MIN_SCORE + 1) + 1,
-                      23> transTable;
 
     /**
      * Reccursively score connect 4 position using negamax variant of alpha-beta algorithm.
@@ -56,7 +35,7 @@ namespace GameSolver { namespace Connect4 {
      * - if actual score of position >= beta then beta <= return value <= actual score
      * - if alpha <= actual score <= beta then return value = actual score
      */
-    int negamax(const Position &P, int alpha, int beta) {
+    int Solver::negamax(const Position &P, int alpha, int beta) {
       assert(alpha < beta);
       assert(!P.canWinNext());
 
@@ -107,9 +86,10 @@ namespace GameSolver { namespace Connect4 {
       return alpha;
     }
 
-  public:
 
-    int solve(const Position &P, bool weak = false) 
+
+
+    int Solver::solve(const Position &P, bool weak) 
     {
       if(P.canWinNext()) // check if win in one move as the Negamax function does not support this case.
         return (Position::WIDTH*Position::HEIGHT+1 - P.nbMoves())/2;
@@ -130,20 +110,9 @@ namespace GameSolver { namespace Connect4 {
       }
       return min;
     }
-
-    unsigned long long getNodeCount() 
-    {
-      return nodeCount;
-    }
-
-    void reset() 
-    {
-      nodeCount = 0;
-      transTable.reset();
-    }
-
+    
     // Constructor
-    Solver() : nodeCount{0} {
+    Solver::Solver() : nodeCount{0} {
       reset();
       for(int i = 0; i < Position::WIDTH; i++)
         columnOrder[i] = Position::WIDTH/2 + (1-2*(i%2))*(i+1)/2;   
@@ -151,58 +120,4 @@ namespace GameSolver { namespace Connect4 {
       // example for WIDTH=7: columnOrder = {3, 4, 2, 5, 1, 6, 0}
     }
 
-  };
 }} // namespace GameSolver::Connect4
-
-
-/*
- * Get micro-second precision timestamp
- * uses unix gettimeofday function
- */
-#include <sys/time.h>
-unsigned long long getTimeMicrosec() {
-  timeval NOW;
-  gettimeofday(&NOW, NULL);
-  return NOW.tv_sec*1000000LL + NOW.tv_usec;    
-}
-
-/*
- * Main function.
- * Reads Connect 4 positions, line by line, from standard input 
- * and writes one line per position to standard output containing:
- *  - score of the position
- *  - number of nodes explored
- *  - time spent in microsecond to solve the position.
- *
- *  Any invalid position (invalid sequence of move, or already won game) 
- *  will generate an error message to standard error and an empty line to standard output.
- */
-#include <iostream>
-int main(int argc, char** argv) {
-
-  Solver solver;
-
-  bool weak = false;
-  if(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'w') weak = true;
-
-  std::string line;
-
-  for(int l = 1; std::getline(std::cin, line); l++) {
-    Position P;
-    if(P.play(line) != line.size())
-    {
-      std::cerr << "Line " << l << ": Invalid move " << (P.nbMoves()+1) << " \"" << line << "\"" << std::endl;
-    }
-    else
-    {
-      solver.reset();
-      unsigned long long start_time = getTimeMicrosec();
-      int score = solver.solve(P, weak);
-      unsigned long long end_time = getTimeMicrosec();
-      std::cout << line << " " << score << " " << solver.getNodeCount() << " " << (end_time - start_time);
-    }
-    std::cout << std::endl;
-  }
-}
-
-

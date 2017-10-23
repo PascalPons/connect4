@@ -1,7 +1,7 @@
 CXX=g++
 CXXFLAGS=--std=c++11 -W -Wall -O3 -DNDEBUG
 
-SRCS=solver.cpp
+SRCS=solver.cpp main.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 
 c4solver:$(OBJS)

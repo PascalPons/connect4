@@ -21,6 +21,7 @@
 
 #include <string>
 #include <cstdint>
+#include <cassert>
 
 namespace GameSolver { namespace Connect4 {
   /**
