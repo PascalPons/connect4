@@ -31,7 +31,7 @@ namespace GameSolver { namespace Connect4 {
     int columnOrder[Position::WIDTH]; // column exploration order
 
     TranspositionTable<Position::WIDTH*(Position::HEIGHT+1),                    // nb bits key
-                      log2(Position::MAX_SCORE - Position::MIN_SCORE + 1) + 1,  // nb bits value
+                      log2(Position::MAX_SCORE - Position::MIN_SCORE + 1) + 2,  // nb bits value
                       23> transTable;                                           // log2 of size of transposition table
 
     /**
