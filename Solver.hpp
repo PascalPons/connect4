@@ -19,7 +19,7 @@
 #ifndef SOLVER_HPP
 #define SOLVER_HPP
 
-#include "position.hpp"
+#include "Position.hpp"
 #include "TranspositionTable.hpp"
 
 namespace GameSolver {

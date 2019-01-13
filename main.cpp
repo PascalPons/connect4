@@ -16,7 +16,7 @@
  * along with Connect4 Game Solver. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "solver.hpp"
+#include "Solver.hpp"
 #include <iostream>
 #include <sys/time.h>
 

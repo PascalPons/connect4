@@ -17,7 +17,7 @@
  */
 
 #include <cassert>
-#include "solver.hpp"
+#include "Solver.hpp"
 #include "MoveSorter.hpp"
 
 using namespace GameSolver::Connect4;
