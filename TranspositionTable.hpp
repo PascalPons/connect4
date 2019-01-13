@@ -1,6 +1,6 @@
 /*
  * This file is part of Connect4 Game Solver <http://connect4.gamesolver.org>
- * Copyright (C) 2007 Pascal Pons <contact@gamesolver.org>
+ * Copyright (C) 2017-2019 Pascal Pons <contact@gamesolver.org>
  *
  * Connect4 Game Solver is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License as
@@ -21,33 +21,33 @@
 
 #include <cstring>
 
-namespace GameSolver { namespace Connect4 {
+namespace GameSolver {
+namespace Connect4 {
 
-/*
+/**
  * util functions to compute next prime at compile time
  */
 constexpr uint64_t med(uint64_t min, uint64_t max) {
-  return (min+max)/2;
+  return (min + max) / 2;
 }
-/*
+/**
  * tells if an integer n has a a divisor between min (inclusive) and max (exclusive)
  */
 constexpr bool has_factor(uint64_t n, uint64_t min, uint64_t max) {
-  return min*min > n ? false : // do not search for factor above sqrt(n)
-    min + 1 >= max ? n % min == 0 :
-    has_factor(n, min, med(min,max)) || has_factor(n, med(min,max), max);
+  return min * min > n ? false : // do not search for factor above sqrt(n)
+         min + 1 >= max ? n % min == 0 :
+         has_factor(n, min, med(min, max)) || has_factor(n, med(min, max), max);
 }
 
 // return next prime number greater or equal to n.
 // n must be >= 2
 constexpr uint64_t next_prime(uint64_t n) {
-  return has_factor(n, 2, n) ? next_prime(n+1) : n;
+  return has_factor(n, 2, n) ? next_prime(n + 1) : n;
 }
 
 // log2(1) = 0; log2(2) = 1; log2(3) = 1; log2(4) = 2; log2(8) = 3
-constexpr unsigned int log2(unsigned int n) 
-{
-  return n <= 1 ? 0 : log2(n/2)+1;
+constexpr unsigned int log2(unsigned int n) {
+  return n <= 1 ? 0 : log2(n / 2) + 1;
 }
 
 /**
@@ -59,13 +59,13 @@ class TableGetter {
   virtual value_t get(uint64_t key) const = 0;
 };
 
-  // uint_t<S> is a template type providing an unsigned int able to fit interger of S bits.
-  // uint_t<8> = uint8_t and uint_t<9> = uint_16t
-  template<int S> using uint_t = 
-      typename std::conditional<S <= 8, uint_least8_t, 
-      typename std::conditional<S <= 16, uint_least16_t,
-      typename std::conditional<S <= 32, uint_least32_t, 
-                                         uint_least64_t>::type >::type >::type;
+// uint_t<S> is a template type providing an unsigned int able to fit interger of S bits.
+// uint_t<8> = uint8_t and uint_t<9> = uint_16t
+template<int S> using uint_t =
+  typename std::conditional < S <= 8, uint_least8_t,
+  typename std::conditional < S <= 16, uint_least16_t,
+  typename std::conditional<S <= 32, uint_least32_t,
+  uint_least64_t>::type>::type >::type;
 
 /**
  * Transposition Table is a simple hash map with fixed storage size.
@@ -74,7 +74,7 @@ class TableGetter {
  *
  * The number of stored entries is a power of two that is defined at compile time.
  * We also define size of the entries and keys to allow optimization at compile time.
- * 
+ *
  * key_size:   number of bits of the key
  * value_size: number of bits of the value
  * log_size:   base 2 log of the size of the Transposition Table.
@@ -82,36 +82,34 @@ class TableGetter {
  */
 template<class partial_key_t, class value_t, int log_size>
 class TranspositionTable : public TableGetter<value_t> {
-  private:
+ private:
 
   static const size_t size = next_prime(1 << log_size); // size of the transition table. Have to be odd to be prime with 2^sizeof(key_t)
-                                                        // using a prime number reduces collisions
   key_t *K;     // Array to store truncated version of keys;
   value_t *V;   // Array to store values;
 
   size_t index(uint64_t key) const {
-    return key%size;
+    return key % size;
   }
 
-  public:
-  
+ public:
   TranspositionTable() {
     K = new key_t[size];
     V = new value_t[size];
     reset();
   }
-  
+
   ~TranspositionTable() {
     delete[] K;
     delete[] V;
   }
 
-  /*
+  /**
    * Empty the Transition Table.
    */
   void reset() { // fill everything with 0, because 0 value means missing data
-    memset(K, 0, size*sizeof(key_t));
-    memset(V, 0, size*sizeof(value_t));
+    memset(K, 0, size * sizeof(key_t));
+    memset(V, 0, size * sizeof(value_t));
   }
 
   /**
@@ -125,7 +123,7 @@ class TranspositionTable : public TableGetter<value_t> {
     V[pos] = value;
   }
 
-  /** 
+  /**
    * Get the value of a key
    * @param key: must be less than key_size bits.
    * @return value_size bits value associated with the key if present, 0 otherwise.
@@ -138,5 +136,6 @@ class TranspositionTable : public TableGetter<value_t> {
 
 };
 
-}}// namespaces
+} // namespace Connect4
+} // namespace GameSolver
 #endif

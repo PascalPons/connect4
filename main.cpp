@@ -1,6 +1,6 @@
 /*
  * This file is part of Connect4 Game Solver <http://connect4.gamesolver.org>
- * Copyright (C) 2007 Pascal Pons <contact@gamesolver.org>
+ * Copyright (C) 2017-2019 Pascal Pons <contact@gamesolver.org>
  *
  * Connect4 Game Solver is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License as
@@ -22,17 +22,17 @@
 
 using namespace GameSolver::Connect4;
 
-/*
+/**
  * Get micro-second precision timestamp
  * uses unix gettimeofday function
  */
 unsigned long long getTimeMicrosec() {
   timeval NOW;
   gettimeofday(&NOW, NULL);
-  return NOW.tv_sec*1000000LL + NOW.tv_usec;
+  return NOW.tv_sec * 1000000LL + NOW.tv_usec;
 }
 
-/*
+/**
  * Main function.
  * Reads Connect 4 positions, line by line, from standard input
  * and writes one line per position to standard output containing:
@@ -54,12 +54,9 @@ int main(int argc, char** argv) {
 
   for(int l = 1; std::getline(std::cin, line); l++) {
     Position P;
-    if(P.play(line) != line.size())
-    {
-      std::cerr << "Line " << l << ": Invalid move " << (P.nbMoves()+1) << " \"" << line << "\"" << std::endl;
-    }
-    else
-    {
+    if(P.play(line) != line.size()) {
+      std::cerr << "Line " << l << ": Invalid move " << (P.nbMoves() + 1) << " \"" << line << "\"" << std::endl;
+    } else {
       solver.reset();
       unsigned long long start_time = getTimeMicrosec();
       int score = solver.solve(P, weak);
@@ -69,5 +66,3 @@ int main(int argc, char** argv) {
     std::cout << std::endl;
   }
 }
-
-

@@ -1,6 +1,6 @@
 /*
  * This file is part of Connect4 Game Solver <http://connect4.gamesolver.org>
- * Copyright (C) 2007 Pascal Pons <contact@gamesolver.org>
+ * Copyright (C) 2017-2019 Pascal Pons <contact@gamesolver.org>
  *
  * Connect4 Game Solver is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License as
@@ -22,50 +22,47 @@
 #include "position.hpp"
 #include "TranspositionTable.hpp"
 
-namespace GameSolver { namespace Connect4 {
+namespace GameSolver {
+namespace Connect4 {
 
-  class Solver {
-  private:
-    static const int TABLE_SIZE = 23; // store 2^TABLE_SIZE elements in the transpositiontbale    
-    TranspositionTable<uint_t<Position::WIDTH*(Position::HEIGHT + 1) - TABLE_SIZE>, uint8_t, TABLE_SIZE> transTable;
-    
-    unsigned long long nodeCount; // counter of explored nodes.
+class Solver {
+ private:
+  static const int TABLE_SIZE = 23; // store 2^TABLE_SIZE elements in the transpositiontbale
+  TranspositionTable < uint_t < Position::WIDTH*(Position::HEIGHT + 1) - TABLE_SIZE >, uint8_t, TABLE_SIZE > transTable;
 
-    int columnOrder[Position::WIDTH]; // column exploration order
+  unsigned long long nodeCount; // counter of explored nodes.
 
-    /**
-     * Reccursively score connect 4 position using negamax variant of alpha-beta algorithm.
-     * @param: position to evaluate, this function assumes nobody already won and 
-     *         current player cannot win next move. This has to be checked before
-     * @param: alpha < beta, a score window within which we are evaluating the position.
-     *
-     * @return the exact score, an upper or lower bound score depending of the case:
-     * - if actual score of position <= alpha then actual score <= return value <= alpha
-     * - if actual score of position >= beta then beta <= return value <= actual score
-     * - if alpha <= actual score <= beta then return value = actual score
-     */
-    int negamax(const Position &P, int alpha, int beta);
+  int columnOrder[Position::WIDTH]; // column exploration order
 
-  public:
+  /**
+   * Reccursively score connect 4 position using negamax variant of alpha-beta algorithm.
+   * @param: position to evaluate, this function assumes nobody already won and
+   *         current player cannot win next move. This has to be checked before
+   * @param: alpha < beta, a score window within which we are evaluating the position.
+   *
+   * @return the exact score, an upper or lower bound score depending of the case:
+   * - if actual score of position <= alpha then actual score <= return value <= alpha
+   * - if actual score of position >= beta then beta <= return value <= actual score
+   * - if alpha <= actual score <= beta then return value = actual score
+   */
+  int negamax(const Position &P, int alpha, int beta);
 
-    int solve(const Position &P, bool weak = false);
+ public:
 
-    unsigned long long getNodeCount() 
-    {
-      return nodeCount;
-    }
+  int solve(const Position &P, bool weak = false);
 
-    void reset() 
-    {
-      nodeCount = 0;
-      transTable.reset();
-    }
+  unsigned long long getNodeCount() {
+    return nodeCount;
+  }
 
-    // Constructor
-    Solver();
-  };
+  void reset() {
+    nodeCount = 0;
+    transTable.reset();
+  }
 
-}} // end namespaces
+  Solver(); // Constructor
+};
 
+} // namespace Connect4
+} // namespace GameSolver
 #endif
-
