@@ -26,13 +26,12 @@ namespace GameSolver { namespace Connect4 {
 
   class Solver {
   private:
+    static const int TABLE_SIZE = 23; // store 2^TABLE_SIZE elements in the transpositiontbale    
+    TranspositionTable<uint_t<Position::WIDTH*(Position::HEIGHT + 1) - TABLE_SIZE>, uint8_t, TABLE_SIZE> transTable;
+    
     unsigned long long nodeCount; // counter of explored nodes.
 
     int columnOrder[Position::WIDTH]; // column exploration order
-
-    TranspositionTable<Position::WIDTH*(Position::HEIGHT+1),                    // nb bits key
-                      log2(Position::MAX_SCORE - Position::MIN_SCORE + 1) + 2,  // nb bits value
-                      23> transTable;                                           // log2 of size of transposition table
 
     /**
      * Reccursively score connect 4 position using negamax variant of alpha-beta algorithm.
