@@ -55,8 +55,18 @@ constexpr unsigned int log2(unsigned int n) {
  */
 template<class value_t>
 class TableGetter {
+ private:
+  virtual void* getKeys() = 0;
+  virtual void* getValues() = 0;
+  virtual size_t getSize() = 0;
+  virtual int getKeySize() = 0;
+  virtual int getValueSize() = 0;
+
  public:
   virtual value_t get(uint64_t key) const = 0;
+  virtual ~TableGetter() {};
+
+ friend class OpeningBook;
 };
 
 // uint_t<S> is a template type providing an unsigned int able to fit interger of S bits.
@@ -83,10 +93,15 @@ template<int S> using uint_t =
 template<class partial_key_t, class value_t, int log_size>
 class TranspositionTable : public TableGetter<value_t> {
  private:
-
   static const size_t size = next_prime(1 << log_size); // size of the transition table. Have to be odd to be prime with 2^sizeof(key_t)
-  key_t *K;     // Array to store truncated version of keys;
+  partial_key_t *K;     // Array to store truncated version of keys;
   value_t *V;   // Array to store values;
+
+  void* getKeys()    override {return K;}
+  void* getValues()  override {return V;}
+  size_t getSize()   override {return size;}
+  int getKeySize()   override {return sizeof(partial_key_t);}
+  int getValueSize() override {return sizeof(value_t);}
 
   size_t index(uint64_t key) const {
     return key % size;
@@ -94,7 +109,7 @@ class TranspositionTable : public TableGetter<value_t> {
 
  public:
   TranspositionTable() {
-    K = new key_t[size];
+    K = new partial_key_t[size];
     V = new value_t[size];
     reset();
   }
@@ -108,7 +123,7 @@ class TranspositionTable : public TableGetter<value_t> {
    * Empty the Transition Table.
    */
   void reset() { // fill everything with 0, because 0 value means missing data
-    memset(K, 0, size * sizeof(key_t));
+    memset(K, 0, size * sizeof(partial_key_t));
     memset(V, 0, size * sizeof(value_t));
   }
 
@@ -130,10 +145,9 @@ class TranspositionTable : public TableGetter<value_t> {
    */
   value_t get(uint64_t key) const override {
     size_t pos = index(key);
-    if(K[pos] == (key_t)key) return V[pos]; // need to cast to key_t because key may be truncated due to size of key_t
+    if(K[pos] == (partial_key_t)key) return V[pos]; // need to cast to key_t because key may be truncated due to size of key_t
     else return 0;
   }
-
 };
 
 } // namespace Connect4

@@ -153,6 +153,30 @@ class Position {
   }
 
   /**
+  * Build a symetric base 3 key. Two symetric positions will have the same key.
+  *
+  * This key is a base 3 representation of the sequence of played moves column per column,
+  * from bottom to top. The 3 digits are top_of_colum(0), current_player(1), opponent(2).
+  *
+  * example: game "45" where player one played colum 4, then player two played column 5
+  * has a representation in base 3 digits : 0 0 0 1 0 2 0 0 0 or : 3*3^3 + 1*3^5
+  *
+  * The symetric key is the mimimum key of the two keys built iterating columns from left to righ or right to left.
+  *
+  * as the last digit is always 0, we omit it and a base 3 key
+  * uses N = (nbMoves + nbColums - 1) base 3 digits or N*log2(3) bits.
+  */
+  uint64_t key3() const {
+    uint64_t key_forward = 0;
+    for(int i = 0; i < Position::WIDTH; i++) partialKey3(key_forward, i);  // compute key in increasing order of columns
+
+    uint64_t key_reverse = 0;
+    for(int i = Position::WIDTH; i--;) partialKey3(key_reverse, i);  // compute key in decreasing order of columns
+
+    return key_forward < key_reverse ? key_forward / 3 : key_reverse / 3; // take the smallest key and divide per 3 as the last base3 digit is always 0
+  }
+
+  /**
    * Return a bitmap of all the possible next moves the do not lose in one turn.
    * A losing move is a move leaving the possibility for the opponent to win directly.
    *
@@ -190,11 +214,6 @@ class Position {
    */
   Position() : current_position{0}, mask{0}, moves{0} {}
 
- private:
-  uint64_t current_position; // bitmap of the current_player stones
-  uint64_t mask;             // bitmap of all the already palyed spots
-  unsigned int moves;        // number of moves played since the beinning of the game.
-
   /**
    * Indicates whether a column is playable.
    * @param col: 0-based index of column to play
@@ -203,7 +222,6 @@ class Position {
   bool canPlay(int col) const {
     return (mask & top_mask_col(col)) == 0;
   }
-
 
   /**
    * Plays a playable column.
@@ -215,7 +233,6 @@ class Position {
     play((mask + bottom_mask_col(col)) & column_mask(col));
   }
 
-
   /**
    * Indicates whether the current player wins by playing a given column.
    * This function should never be called on a non-playable column.
@@ -224,6 +241,23 @@ class Position {
    */
   bool isWinningMove(int col) const {
     return winning_position() & possible() & column_mask(col);
+  }
+
+ private:
+  uint64_t current_position; // bitmap of the current_player stones
+  uint64_t mask;             // bitmap of all the already palyed spots
+  unsigned int moves;        // number of moves played since the beinning of the game.
+
+  /**
+    * Compute a partial base 3 key for a given column
+    */
+  void partialKey3(uint64_t &key, int col) const {
+    for(uint64_t pos = UINT64_C(1) << (col * (Position::HEIGHT + 1)); pos & mask; pos <<= 1) {
+      key *= 3;
+      if(pos & current_position) key += 1;
+      else key += 2;
+    }
+    key *= 3;
   }
 
   /**

@@ -1,11 +1,14 @@
 CXX=g++
 CXXFLAGS=--std=c++11 -W -Wall -O3 -DNDEBUG
 
-SRCS=Solver.cpp main.cpp
+SRCS=Solver.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 
-c4solver:$(OBJS)
-	$(CXX) $(LDFLAGS) -o c4solver $(OBJS) $(LOADLIBES) $(LDLIBS)
+c4solver:$(OBJS) main.o
+	$(CXX) $(LDFLAGS) -o c4solver main.o $(OBJS) $(LOADLIBES) $(LDLIBS)
+
+generator: generator.o
+	$(CXX) $(LDFLAGS) -o generator generator.o $(LOADLIBES) $(LDLIBS)
 
 .depend: $(SRCS)
 	$(CXX) $(CXXFLAGS) -MM $^ > ./.depend
@@ -13,6 +16,6 @@ c4solver:$(OBJS)
 include .depend
 
 clean:
-	rm -f *.o .depend c4solver
+	rm -f *.o .depend c4solver generator
 
 

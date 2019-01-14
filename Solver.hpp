@@ -21,6 +21,7 @@
 
 #include "Position.hpp"
 #include "TranspositionTable.hpp"
+#include "OpeningBook.hpp"
 
 namespace GameSolver {
 namespace Connect4 {
@@ -29,9 +30,8 @@ class Solver {
  private:
   static const int TABLE_SIZE = 23; // store 2^TABLE_SIZE elements in the transpositiontbale
   TranspositionTable < uint_t < Position::WIDTH*(Position::HEIGHT + 1) - TABLE_SIZE >, uint8_t, TABLE_SIZE > transTable;
-
+  OpeningBook book{Position::WIDTH, Position::HEIGHT}; // opening book
   unsigned long long nodeCount; // counter of explored nodes.
-
   int columnOrder[Position::WIDTH]; // column exploration order
 
   /**
@@ -58,6 +58,10 @@ class Solver {
   void reset() {
     nodeCount = 0;
     transTable.reset();
+  }
+
+  void loadBook(std::string book_file) {
+    book.load(book_file);
   }
 
   Solver(); // Constructor

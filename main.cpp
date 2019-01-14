@@ -48,7 +48,16 @@ int main(int argc, char** argv) {
   Solver solver;
 
   bool weak = false;
-  if(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'w') weak = true;
+  std::string opening_book = "7x6.book";
+  for(int i = 1; i < argc; i++) {
+    if(argv[i][0] == '-') {
+      if(argv[i][1] == 'w') weak = true;
+      else if(argv[i][1] == 'b') {
+        if(++i < argc) opening_book = std::string(argv[i]);
+      }
+    }
+  }
+  solver.loadBook(opening_book);
 
   std::string line;
 
