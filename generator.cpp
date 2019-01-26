@@ -19,6 +19,7 @@ void explore(const Position &P, char* pos_str, const int depth) {
   visited.insert(key);            // flag new position as visited
 
   int nb_moves = P.nbMoves();
+  if(nb_moves == depth)
   std::cout << pos_str << std::endl;
   if(nb_moves >= depth) return;  // do not explore at further depth
 
@@ -39,8 +40,8 @@ void generate_opening_book() {
   static constexpr int BOOK_SIZE = 23; // store 2^BOOK_SIZE positions in the book
   static constexpr int DEPTH = 14;     // max depth of evry position to be stored
   static constexpr double LOG_3 = 1.58496250072; // log2(3)
-  TranspositionTable<uint_t<int((DEPTH + Position::WIDTH -1) * LOG_3) + 1 - BOOK_SIZE>, uint8_t, BOOK_SIZE> *table =
-    new TranspositionTable<uint_t<int((DEPTH + Position::WIDTH -1) * LOG_3) + 1 - BOOK_SIZE>, uint8_t, BOOK_SIZE>();
+  TranspositionTable<uint_t<int((DEPTH + Position::WIDTH -1) * LOG_3) + 1 - BOOK_SIZE>, Position::position_t, uint8_t, BOOK_SIZE> *table =
+    new TranspositionTable<uint_t<int((DEPTH + Position::WIDTH -1) * LOG_3) + 1 - BOOK_SIZE>, Position::position_t, uint8_t, BOOK_SIZE>();
 
   std::string pos;
   int score;

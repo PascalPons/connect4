@@ -42,7 +42,7 @@ int Solver::negamax(const Position &P, int alpha, int beta) {
 
   nodeCount++; // increment counter of explored nodes
 
-  uint64_t possible = P.possibleNonLosingMoves();
+  Position::position_t possible = P.possibleNonLosingMoves();
   if(possible == 0)     // if no possible non losing move, opponent wins next move
     return -(Position::WIDTH * Position::HEIGHT - P.nbMoves()) / 2;
 
@@ -61,7 +61,7 @@ int Solver::negamax(const Position &P, int alpha, int beta) {
     if(alpha >= beta) return beta;  // prune the exploration if the [alpha;beta] window is empty.
   }
 
-  const uint64_t key = P.key();
+  const Position::position_t key = P.key();
   if(int val = transTable.get(key)) {
     if(val > Position::MAX_SCORE - Position::MIN_SCORE + 1) { // we have an lower bound
       min = val + 2 * Position::MIN_SCORE - Position::MAX_SCORE - 2;
@@ -82,10 +82,10 @@ int Solver::negamax(const Position &P, int alpha, int beta) {
 
   MoveSorter moves;
   for(int i = Position::WIDTH; i--;)
-    if(uint64_t move = possible & Position::column_mask(columnOrder[i]))
+    if(Position::position_t move = possible & Position::column_mask(columnOrder[i]))
       moves.add(move, P.moveScore(move));
 
-  while(uint64_t next = moves.getNext()) {
+  while(Position::position_t next = moves.getNext()) {
     Position P2(P);
     P2.play(next);  // It's opponent turn in P2 position after current player plays x column.
     int score = -negamax(P2, -beta, -alpha); // explore opponent's score within [-beta;-alpha] windows:

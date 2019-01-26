@@ -53,7 +53,7 @@ constexpr unsigned int log2(unsigned int n) {
 /**
  * Abstrac interface for the Transposition Table get function
  */
-template<class value_t>
+template<class key_t, class value_t>
 class TableGetter {
  private:
   virtual void* getKeys() = 0;
@@ -63,7 +63,7 @@ class TableGetter {
   virtual int getValueSize() = 0;
 
  public:
-  virtual value_t get(uint64_t key) const = 0;
+  virtual value_t get(key_t key) const = 0;
   virtual ~TableGetter() {};
 
  friend class OpeningBook;
@@ -90,8 +90,8 @@ template<int S> using uint_t =
  * log_size:   base 2 log of the size of the Transposition Table.
  *             The table will contain 2^log_size elements
  */
-template<class partial_key_t, class value_t, int log_size>
-class TranspositionTable : public TableGetter<value_t> {
+template<class partial_key_t, class key_t, class value_t, int log_size>
+class TranspositionTable : public TableGetter<key_t, value_t> {
  private:
   static const size_t size = next_prime(1 << log_size); // size of the transition table. Have to be odd to be prime with 2^sizeof(key_t)
   partial_key_t *K;     // Array to store truncated version of keys;
@@ -103,7 +103,7 @@ class TranspositionTable : public TableGetter<value_t> {
   int getKeySize()   override {return sizeof(partial_key_t);}
   int getValueSize() override {return sizeof(value_t);}
 
-  size_t index(uint64_t key) const {
+  size_t index(key_t key) const {
     return key % size;
   }
 
@@ -132,7 +132,7 @@ class TranspositionTable : public TableGetter<value_t> {
    * @param key: must be less than key_size bits.
    * @param value: must be less than value_size bits. null (0) value is used to encode missing data
    */
-  void put(uint64_t key, value_t value) {
+  void put(key_t key, value_t value) {
     size_t pos = index(key);
     K[pos] = key; // key is possibly trucated as key_t is possibly less than key_size bits.
     V[pos] = value;
@@ -143,7 +143,7 @@ class TranspositionTable : public TableGetter<value_t> {
    * @param key: must be less than key_size bits.
    * @return value_size bits value associated with the key if present, 0 otherwise.
    */
-  value_t get(uint64_t key) const override {
+  value_t get(key_t key) const override {
     size_t pos = index(key);
     if(K[pos] == (partial_key_t)key) return V[pos]; // need to cast to key_t because key may be truncated due to size of key_t
     else return 0;

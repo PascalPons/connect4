@@ -28,36 +28,36 @@ namespace GameSolver {
 namespace Connect4 {
 
 class OpeningBook {
-  TableGetter<uint8_t> *T;
+  TableGetter<Position::position_t, uint8_t> *T;
   const int width;
   const int height;
   int depth;
 
   template<class partial_key_t>
-  TableGetter<uint8_t>* initTranspositionTable(int log_size) {
+  TableGetter<Position::position_t, uint8_t>* initTranspositionTable(int log_size) {
     switch(log_size) {
     case 21:
-      return new TranspositionTable<partial_key_t, uint8_t, 21>();
+      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 21>();
     case 22:
-      return new TranspositionTable<partial_key_t, uint8_t, 22>();
+      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 22>();
     case 23:
-      return new TranspositionTable<partial_key_t, uint8_t, 23>();
+      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 23>();
     case 24:
-      return new TranspositionTable<partial_key_t, uint8_t, 24>();
+      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 24>();
     case 25:
-      return new TranspositionTable<partial_key_t, uint8_t, 25>();
+      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 25>();
     case 26:
-      return new TranspositionTable<partial_key_t, uint8_t, 26>();
+      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 26>();
     case 27:
-      return new TranspositionTable<partial_key_t, uint8_t, 27>();
+      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 27>();
     default:
       std::cerr << "Unimplemented OpeningBook size: " << log_size << std::endl;
       return 0;
     }
   }
 
-  TableGetter<uint8_t>* initTranspositionTable(int key_bytes, int log_size) {
-    switch(key_bytes) {
+  TableGetter<Position::position_t, uint8_t>* initTranspositionTable(int partial_key_bytes, int log_size) {
+    switch(partial_key_bytes) {
     case 1:
       return initTranspositionTable<uint8_t>(log_size);
     case 2:
@@ -65,7 +65,7 @@ class OpeningBook {
     case 4:
       return initTranspositionTable<uint32_t>(log_size);
     default:
-      std::cerr << "Invalid key size: " << key_bytes << " bytes" << std::endl;
+      std::cerr << "Invalid internal key size: " << partial_key_bytes << " bytes" << std::endl;
       return 0;
     }
   }
@@ -73,7 +73,7 @@ class OpeningBook {
  public:
   OpeningBook(int width, int height) : T{0}, width{width}, height{height}, depth{ -1} {} // Empty opening book
 
-  OpeningBook(int width, int height, int depth, TableGetter<uint8_t>* T) : T{T}, width{width}, height{height}, depth{depth} {} // Empty opening book
+  OpeningBook(int width, int height, int depth, TableGetter<Position::position_t, uint8_t>* T) : T{T}, width{width}, height{height}, depth{depth} {} // Empty opening book
   /**
     * Opening book file format:
     * - 1 byte: board width
@@ -95,7 +95,7 @@ class OpeningBook {
       return;
     } else std::cerr << "Loading opening book from file: " << filename << ". ";
 
-    char _width, _height, _depth, value_bytes, key_bytes, log_size;
+    char _width, _height, _depth, value_bytes, partial_key_bytes, log_size;
 
     ifs.read(&_width, 1);
     if(ifs.fail() || _width != width) {
@@ -115,9 +115,9 @@ class OpeningBook {
       return;
     }
 
-    ifs.read(&key_bytes, 1);
-    if(ifs.fail() || key_bytes > 8) {
-      std::cerr << "Unable to load opening book: invalid key size(found: " << int(key_bytes) << ")"  << std::endl;
+    ifs.read(&partial_key_bytes, 1);
+    if(ifs.fail() || partial_key_bytes > 8) {
+      std::cerr << "Unable to load opening book: invalid internal key size(found: " << int(partial_key_bytes) << ")"  << std::endl;
       return;
     }
 
@@ -133,8 +133,8 @@ class OpeningBook {
       return;
     }
 
-    if((T = initTranspositionTable(key_bytes, log_size))) {
-      ifs.read(reinterpret_cast<char *>(T->getKeys()), T->getSize() * key_bytes);
+    if((T = initTranspositionTable(partial_key_bytes, log_size))) {
+      ifs.read(reinterpret_cast<char *>(T->getKeys()), T->getSize() * partial_key_bytes);
       ifs.read(reinterpret_cast<char *>(T->getValues()), T->getSize() * value_bytes);
       if(ifs.fail()) {
         std::cerr << "Unable to load data from opening book" << std::endl;
