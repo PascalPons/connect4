@@ -19,7 +19,7 @@ void explore(const Position &P, char* pos_str, const int depth) {
   visited.insert(key);            // flag new position as visited
 
   int nb_moves = P.nbMoves();
-  if(nb_moves == depth)
+  if(nb_moves <= depth)
   std::cout << pos_str << std::endl;
   if(nb_moves >= depth) return;  // do not explore at further depth
 
@@ -62,7 +62,7 @@ void generate_opening_book() {
     DEPTH,
     table
   };
-  book.save("7x6_small.book");
+  book.save("7x6.book");
 }
 
 /**

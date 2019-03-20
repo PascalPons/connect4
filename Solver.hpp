@@ -57,7 +57,7 @@ class Solver {
 
   void reset() {
     nodeCount = 0;
-    //transTable.reset();
+    transTable.reset();
   }
 
   void loadBook(std::string book_file) {
