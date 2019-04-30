@@ -13,17 +13,17 @@ std::unordered_set<uint64_t> visited;
  * Explore and print all possible position under a given depth.
  * symetric positions are printed only once.
  */
-void explore(const Position &P, char* pos_str, const int depth) {
+void explore(const Position &P, char* const pos_str, const int depth) {
   uint64_t key = P.key3();
   if(visited.count(key)) return;  // already explored position
   visited.insert(key);            // flag new position as visited
 
-  int nb_moves = P.nbMoves();
+  const int nb_moves = P.nbMoves();
   if(nb_moves <= depth)
   std::cout << pos_str << std::endl;
   if(nb_moves >= depth) return;  // do not explore at further depth
 
-  for(int i = 0; i < Position::WIDTH; i++) // explore all possible moves
+  for(int i = 0; i < Position::WIDTH; ++i) // explore all possible moves
     if(P.canPlay(i) && !P.isWinningMove(i)) {
       Position P2(P);
       P2.playCol(i);
@@ -71,8 +71,9 @@ void generate_opening_book() {
  */
 int main(int argc, char** argv) {
   if(argc > 1) {
-    int depth = atoi(argv[1]);
-    char pos_str[depth + 1] = {0};
+    const int depth = atoi(argv[1]);
+    char pos_str[depth + 1];
+    memset(pos_str, 0, (depth + 1) * sizeof(int));
     explore(Position(), pos_str, depth);
   } else generate_opening_book();
 }
