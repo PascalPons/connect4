@@ -24,6 +24,9 @@
 #include "Position.hpp"
 #include "TranspositionTable.hpp"
 
+#define likely(x)      __builtin_expect(!!(x), 1)
+#define unlikely(x)    __builtin_expect(!!(x), 0)
+
 namespace GameSolver {
 namespace Connect4 {
 
@@ -34,23 +37,29 @@ class OpeningBook {
   int depth;
 
   template<class partial_key_t>
-  TableGetter<Position::position_t, uint8_t>* initTranspositionTable(int log_size) {
-    switch(log_size) {
-    case 21:
-      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 21>();
-    case 22:
-      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 22>();
-    case 23:
-      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 23>();
-    case 24:
-      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 24>();
-    case 25:
-      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 25>();
-    case 26:
-      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 26>();
-    case 27:
-      return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 27>();
-    default:
+  TableGetter<Position::position_t, uint8_t>* initTranspositionTable(const int log_size) {
+    constexpr auto LOG_SIZE_LOWER_BOUND = 20;
+    constexpr auto LOG_SIZE_UPPER_BOUND = 28;
+    if (likely(log_size > LOG_SIZE_LOWER_BOUND && log_size < LOG_SIZE_UPPER_BOUND)) {
+      switch(log_size) {
+        case 21:
+          return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 21>();
+        case 22:
+          return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 22>();
+        case 23:
+          return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 23>();
+        case 24:
+          return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 24>();
+        case 25:
+          return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 25>();
+        case 26:
+          return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 26>();
+        case 27:
+          return new TranspositionTable<partial_key_t, Position::position_t, uint8_t, 27>();
+	default:
+	  return 0;
+      }
+    } else {
       std::cerr << "Unimplemented OpeningBook size: " << log_size << std::endl;
       return 0;
     }

@@ -127,8 +127,8 @@ int Solver::solve(const Position &P, bool weak) {
 
 // Constructor
 Solver::Solver() : nodeCount{0} {
-  for(int i = 0; i < Position::WIDTH; i++) // initialize the column exploration order, starting with center columns
-    columnOrder[i] = Position::WIDTH / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2; // example for WIDTH=7: columnOrder = {3, 4, 2, 5, 1, 6, 0}
+  for(int i = 0; i < Position::WIDTH; ++i) // initialize the column exploration order, starting with center columns
+    columnOrder[i] = Position::WIDTH / 2 + (1 - 2 * (i & 1)) * (i + 1) / 2; // example for WIDTH=7: columnOrder = {3, 4, 2, 5, 1, 6, 0}
 }
 
 } // namespace Connect4

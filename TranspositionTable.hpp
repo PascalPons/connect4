@@ -103,8 +103,9 @@ class TranspositionTable : public TableGetter<key_t, value_t> {
   int getKeySize()   override {return sizeof(partial_key_t);}
   int getValueSize() override {return sizeof(value_t);}
 
-  size_t index(key_t key) const {
-    return key % size;
+  inline size_t index(const key_t key) const {
+    // Because size is a power of 2, key % size == key & (size - 1)
+    return key & (size - 1);
   }
 
  public:

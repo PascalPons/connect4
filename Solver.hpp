@@ -28,7 +28,7 @@ namespace Connect4 {
 
 class Solver {
  private:
-  static const int TABLE_SIZE = 24; // store 2^TABLE_SIZE elements in the transpositiontbale
+  static constexpr int TABLE_SIZE = 24; // store 2^TABLE_SIZE elements in the transpositiontbale
   TranspositionTable < uint_t < Position::WIDTH*(Position::HEIGHT + 1) - TABLE_SIZE >, Position::position_t, uint8_t, TABLE_SIZE > transTable;
   OpeningBook book{Position::WIDTH, Position::HEIGHT}; // opening book
   unsigned long long nodeCount; // counter of explored nodes.
@@ -51,7 +51,7 @@ class Solver {
 
   int solve(const Position &P, bool weak = false);
 
-  unsigned long long getNodeCount() {
+  unsigned long long getNodeCount() const {
     return nodeCount;
   }
 
