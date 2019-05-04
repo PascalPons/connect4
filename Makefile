@@ -13,7 +13,7 @@ generator: generator.o
 .depend: $(SRCS)
 	$(CXX) $(CXXFLAGS) -MM $^ > ./.depend
 	
-include .depend
+-include .depend
 
 clean:
 	rm -f *.o .depend c4solver generator
