@@ -42,7 +42,7 @@ class MoveSorter {
    * Add a move in the container with its score.
    * You cannot add more than Position::WIDTH moves
    */
-  void add(Position::position_t move, int score) {
+  void add(const Position::position_t move, const int score) {
     int pos = size++;
     for(; pos && entries[pos - 1].score > score; --pos) entries[pos] = entries[pos - 1];
     entries[pos].move = move;

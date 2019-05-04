@@ -83,16 +83,16 @@ namespace Connect4 {
 
 class Position {
  public:
-  static const int WIDTH = 7;  // width of the board
-  static const int HEIGHT = 6; // height of the board
+  static constexpr int WIDTH = 7;  // width of the board
+  static constexpr int HEIGHT = 6; // height of the board
 
   // Board size is 64bits or 128 bits depending on WIDTH and HEIGHT
   using position_t = typename std::conditional < WIDTH * (HEIGHT + 1) <= 64, uint64_t, __int128>::type;
   // __int128 is a g++ non portable type. Use the following line limited to 64bits board for C++ compatibility
   // using position_t = uint64_t
 
-  static const int MIN_SCORE = -(WIDTH*HEIGHT) / 2 + 3;
-  static const int MAX_SCORE = (WIDTH * HEIGHT + 1) / 2 - 3;
+  static constexpr int MIN_SCORE = -(WIDTH*HEIGHT) / 2 + 3;
+  static constexpr int MAX_SCORE = (WIDTH * HEIGHT + 1) / 2 - 3;
 
   static_assert(WIDTH < 10, "Board's width must be less than 10");
   static_assert(WIDTH * (HEIGHT + 1) <= sizeof(position_t)*8, "Board does not fit into position_t bitmask");
@@ -121,7 +121,7 @@ class Position {
    *         Caller can check if the move sequence was valid by comparing the number of
    *         processed moves to the length of the sequence.
    */
-  unsigned int play(std::string seq) {
+  unsigned int play(const std::string &seq) {
     for(unsigned int i = 0; i < seq.size(); i++) {
       int col = seq[i] - '1';
       if(col < 0 || col >= Position::WIDTH || !canPlay(col) || isWinningMove(col)) return i; // invalid move
