@@ -19,6 +19,8 @@
 #ifndef SOLVER_HPP
 #define SOLVER_HPP
 
+#include <vector>
+#include <string>
 #include "Position.hpp"
 #include "TranspositionTable.hpp"
 #include "OpeningBook.hpp"
@@ -48,8 +50,14 @@ class Solver {
   int negamax(const Position &P, int alpha, int beta);
 
  public:
+  static const int INVALID_MOVE = -1000;
 
+  // Returns the score of a position
   int solve(const Position &P, bool weak = false);
+
+  // Returns the score off all possible moves of a position as an array.
+  // Returns INVALID_MOVE for unplayable columns
+  std::vector<int> analyze(const Position &P, bool weak = false);
 
   unsigned long long getNodeCount() const {
     return nodeCount;

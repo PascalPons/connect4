@@ -18,19 +18,8 @@
 
 #include "Solver.hpp"
 #include <iostream>
-#include <sys/time.h>
 
 using namespace GameSolver::Connect4;
-
-/**
- * Get micro-second precision timestamp
- * uses unix gettimeofday function
- */
-unsigned long long getTimeMicrosec() {
-  timeval NOW;
-  gettimeofday(&NOW, NULL);
-  return NOW.tv_sec * 1000000LL + NOW.tv_usec;
-}
 
 /**
  * Main function.
@@ -44,16 +33,19 @@ unsigned long long getTimeMicrosec() {
  *  will generate an error message to standard error and an empty line to standard output.
  */
 int main(int argc, char** argv) {
-
   Solver solver;
-
   bool weak = false;
+  bool analyze = false;
+
   std::string opening_book = "7x6.book";
   for(int i = 1; i < argc; i++) {
     if(argv[i][0] == '-') {
-      if(argv[i][1] == 'w') weak = true;
-      else if(argv[i][1] == 'b') {
+      if(argv[i][1] == 'w') weak = true; // parameter -w: use weak solver
+      else if(argv[i][1] == 'b') { // paramater -b: define an alternative opening book
         if(++i < argc) opening_book = std::string(argv[i]);
+      }
+      else if(argv[i][1] == 'a') { // paramater -a: make an analysis of all possible moves
+        analyze = true;
       }
     }
   }
@@ -66,12 +58,16 @@ int main(int argc, char** argv) {
     if(P.play(line) != line.size()) {
       std::cerr << "Line " << l << ": Invalid move " << (P.nbMoves() + 1) << " \"" << line << "\"" << std::endl;
     } else {
-      solver.reset();
-      unsigned long long start_time = getTimeMicrosec();
-      int score = solver.solve(P, weak);
-      unsigned long long end_time = getTimeMicrosec();
-      std::cout << line << " " << score << " " << solver.getNodeCount() << " " << (end_time - start_time);
+      std::cout << line;
+      if(analyze) {
+        std::vector<int> scores = solver.analyze(P, weak);
+        for(int i = 0; i < Position::WIDTH; i++) std::cout << " " << scores[i];
+      }
+      else {
+        int score = solver.solve(P, weak);
+        std::cout << " " << score;
+      }
+      std::cout << std::endl;
     }
-    std::cout << std::endl;
   }
 }

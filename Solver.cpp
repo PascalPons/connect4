@@ -125,6 +125,20 @@ int Solver::solve(const Position &P, bool weak) {
   return min;
 }
 
+std::vector<int> Solver::analyze(const Position &P, bool weak) {
+  std::vector<int> scores(Position::WIDTH, Solver::INVALID_MOVE);
+  for (int col = 0; col < Position::WIDTH; col++)
+    if (P.canPlay(col)) {
+      if(P.isWinningMove(col)) scores[col] = (Position::WIDTH * Position::HEIGHT + 1 - P.nbMoves()) / 2;
+      else {
+        Position P2(P);
+        P2.playCol(col);
+        scores[col] = -solve(P2, weak);
+      }
+    }
+  return scores;
+}
+
 // Constructor
 Solver::Solver() : nodeCount{0} {
   for(int i = 0; i < Position::WIDTH; i++) // initialize the column exploration order, starting with center columns
